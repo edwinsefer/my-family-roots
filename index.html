@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>My Family Roots — Family Tree</title>
+<style>
+:root{--ink:#2e1c0a;--brown:#5c3d1e;--gold:#c49a2a;--paper:#fdf6ee;--panel:#fffcf7;--line:#d9c9b0;--muted:#7a6654}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:var(--paper);color:var(--ink)}
+.shell{height:100%;display:flex;flex-direction:column}.topbar{z-index:10;display:flex;align-items:center;gap:14px;padding:10px 14px;background:linear-gradient(135deg,#3b2410,#5c3d1e);color:#fff;box-shadow:0 3px 18px #0003}.brand{font-family:Georgia,serif;font-weight:700;font-size:1.1rem;color:#e2c060;white-space:nowrap}.brand span{color:#fff;font-weight:400;font-style:italic}.hint{font-size:.76rem;color:#eadfcf;flex:1}.controls{display:flex;gap:7px;flex-wrap:wrap}.btn{border:1px solid #ffffff33;background:#ffffff12;color:#fff;border-radius:999px;padding:7px 11px;font-size:.78rem;font-weight:700;cursor:pointer}.btn:hover,.btn.active{background:#ffffff22;border-color:#e2c060;color:#ffe9a1}.btn.primary{background:#4a7c59;border-color:#6aab7a}.frame{position:relative;flex:1;min-height:0}.frame iframe{border:0;width:100%;height:100%;display:block;background:var(--paper)}.status{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:#3b2410ee;color:#fff;padding:7px 13px;border-radius:999px;font-size:.74rem;opacity:0;pointer-events:none;transition:opacity .2s}.status.show{opacity:1}
+@media(max-width:700px){.hint{display:none}.topbar{padding:8px}.brand{font-size:.98rem}.btn{padding:6px 9px;font-size:.72rem}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand">🌳 My Family <span>Roots</span></div>
+    <div class="hint">Clean family view · your family data stays in the existing tree</div>
+    <div class="controls">
+      <button class="btn primary" data-action="focus">🌳 Tree</button>
+      <button class="btn" data-action="expand">＋ Expand</button>
+      <button class="btn" data-action="collapse">− Collapse</button>
+      <button class="btn" data-action="search">🔍 Search</button>
+      <button class="btn" data-action="list">📋 List</button>
+      <button class="btn" data-action="fullscreen">⛶</button>
+    </div>
+  </header>
+  <main class="frame"><iframe id="familyFrame" src="family-tree.html" title="My Family Roots family tree"></iframe><div id="status" class="status"></div></main>
+</div>
+<script>
+const frame=document.getElementById('familyFrame'),status=document.getElementById('status');
+function say(t){status.textContent=t;status.classList.add('show');clearTimeout(window.__st);window.__st=setTimeout(()=>status.classList.remove('show'),1300)}
+function doc(){return frame.contentDocument||frame.contentWindow.document}
+function clickTree(){const d=doc();const a=d.querySelector('a[onclick*="showSection(\'tree\')"]');if(a)a.click();else if(d.getElementById('tree')){d.querySelectorAll('.section').forEach(x=>x.classList.remove('active'));d.getElementById('tree').classList.add('active')}}
+function setGenerations(open){const d=doc();clickTree();const blocks=[...d.querySelectorAll('.generation-block')];blocks.forEach((b,i)=>{b.style.display=open?'':'none';if(open||i===0)b.style.display='';});say(open?'All generations expanded':'Tree focused on the first generation')}
+function improve(){try{const d=doc(),s=d.createElement('style');s.id='my-roots-enhancements';s.textContent=`
+body{background:#fdf6ee!important}main{max-width:1280px!important;padding:24px 18px 56px!important}.section-header{margin-bottom:20px!important}.section-header h2{font-size:1.8rem!important}.generation-block{margin-bottom:28px!important;padding:14px!important;background:rgba(255,252,247,.72);border:1px solid #d9c9b0;border-radius:16px;box-shadow:0 3px 16px rgba(60,35,10,.07)}.generation-label{margin-bottom:14px!important}.members-row{gap:14px!important}.member-card{width:190px!important;padding:15px!important;border-radius:14px!important}.member-photo-wrap{width:66px!important;height:66px!important}.member-name{font-size:.94rem!important}.card-actions{opacity:1!important}.connector{margin-left:30px!important}
+@media(max-width:700px){main{padding:14px 10px 40px!important}.member-card{width:calc(50vw - 22px)!important;min-width:150px!important}.generation-block{padding:10px!important}.members-row{gap:10px!important}}
+`;d.head.appendChild(s);d.body.setAttribute('data-enhanced','true');clickTree();}catch(e){}}
+frame.addEventListener('load',()=>setTimeout(improve,80));
+document.querySelectorAll('.btn').forEach(b=>b.addEventListener('click',()=>{const a=b.dataset.action;try{if(a==='focus'){clickTree();say('Tree view ready')}if(a==='expand')setGenerations(true);if(a==='collapse')setGenerations(false);if(a==='search'){const d=doc(),i=d.getElementById('search-input');if(i){i.focus();i.scrollIntoView({behavior:'smooth',block:'start'})}}if(a==='list'){const d=doc(),x=d.querySelector('a[onclick*="list"]');if(x)x.click();else say('List view is available in the family app navigation')}if(a==='fullscreen'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen()}}catch(e){say('Please wait for the family tree to load')}}));
+</script>
+</body>
+</html>
