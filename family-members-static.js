@@ -1,1 +1,1 @@
-window.FAMILY_MEMBERS=[];
+window.FAMILY_MEMBERS="+"
