@@ -1,0 +1,1 @@
+window.FAMILY_MEMBERS_STATIC = "+__import__('json').dumps(__import__('json').load(open('/mnt/data/people.json')),ensure_ascii=False,separators=(',',':'))+";
