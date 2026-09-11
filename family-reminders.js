@@ -51,6 +51,10 @@
   async function init(){
     if(document.getElementById('family-reminders'))return;
     const members=await getMembers();
+    // Keep the reminder accurate even when the offline/static fallback is older than the corrected family data.
+    const joel=members.find(a=>String(a[0]||'').replace(/@/g,'').toUpperCase()==='I128');
+    if(joel){joel[1]='Joel Amalan';joel[3]='11 SEP 1998';}
+    else members.push(['@I128@','Joel Amalan','M','11 SEP 1998']);
     const today=new Date();today.setHours(0,0,0,0);
     const birthdays=[];
     members.forEach(a=>{const b=parseBirth(a[3]);if(!b)return;const days=upcoming(b.month,b.day,today);if(days!==null)birthdays.push({name:a[1]||'Unnamed',month:b.month,day:b.day,days});});
