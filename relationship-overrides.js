@@ -1,11 +1,14 @@
 (()=>{
   const P=window.GEDCOM_PARENTS||{},S=window.GEDCOM_SPOUSES||{};
-  // Confirmed family corrections: I101 ↔ I126; their children are I102 and I103.
+  // Confirmed family correction: I101 Mary spouse is I26 Thanasingh.
+  // I126 Annie Michael Celine is NOT I101's spouse.
+  S['@I101@']=['@I26@'];
+  S['@I26@']=['@I101@'];
+  delete S['@I126@'];
+  // I102 and I103 remain children of I101 Mary + I126 Annie Michael Celine.
   P['@I102@']=['@I101@','@I126@'];
   P['@I103@']=['@I101@','@I126@'];
-  S['@I101@']=['@I126@'];
-  S['@I126@']=['@I101@'];
-  // I104 ↔ I102; their children are I105 and I106.
+  // I104 Ravi is spouse of I102 Sheroline Gnana Ketchial.
   S['@I102@']=['@I104@'];
   S['@I104@']=['@I102@'];
   P['@I105@']=['@I104@','@I102@'];
