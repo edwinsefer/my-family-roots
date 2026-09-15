@@ -38,7 +38,8 @@
     let k=key(p.external_id);if(seen.has(k)||rendered.has(k))return'';
     let n=new Set(seen);n.add(k);rendered.add(k);
     let s=spouses(p),c=children(p);
-    let h='<div class="family"><div class="couple">'+card(p)+(s[0]?'<span>💍</span>'+card(s[0]):'')+'</div>';
+    let h='<div class="family"><div class="couple">'+card(p)+(s[0]&&!rendered.has(key(s[0].external_id))?'<span>💍</span>'+card(s[0]):'')+'</div>';
+    if(s[0])rendered.add(key(s[0].external_id));
     if(open.has(k)&&c.length)h+='<div class="children">'+c.map(x=>'<div class="kid">'+branch(x,n,rendered)+'</div>').join('')+'</div>';
     return h+'</div>';
   }
@@ -47,9 +48,14 @@
     document.getElementById('content').innerHTML='<div class="grid">'+a.map(card).join('')+(a.length?'':'<div class="meta" style="padding:16px">No family member found.</div>')+'</div>';
   }
   function treeRender(q){
-    let rs=q?roots().filter(r=>subtreeHas(r,q)):roots();
-    let note=q?(rs.length?'🔎 Showing the family branch containing your search.':'No family member found in the tree.'):'GEDCOM relationships are the starting source. Your saved edits override them. No Supabase or Login is required to view the tree.';
     let rendered=new Set();
+    if(q){
+      let a=people.filter(x=>matches(x,q));
+      document.getElementById('content').innerHTML='<div class="tree"><div class="hint" style="text-align:center">'+(a.length?'🔎 Showing the family member matching your search.':'No family member found in the tree.')+'</div>'+a.map(p=>'<div class="search-family">'+branch(p,new Set(),rendered)+'</div>').join('')+'</div>';
+      return;
+    }
+    let rs=roots();
+    let note='GEDCOM relationships are the starting source. Your saved edits override them. No Supabase or Login is required to view the tree.';
     document.getElementById('content').innerHTML='<div class="tree"><div class="hint" style="text-align:center">'+note+'</div>'+rs.map(p=>branch(p,new Set(),rendered)).join('')+'</div>';
   }
   function render(){let q=(document.getElementById('search')?.value||'').trim().toLowerCase();if(view==='list'){listRender(q);return}treeRender(q);}
