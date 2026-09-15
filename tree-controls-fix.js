@@ -16,11 +16,16 @@
   function spouses(p){let e=edits[key(p.external_id)];return people.filter(x=>(Array.isArray(e?.spouses)?e.spouses:ged(GS,p.external_id)).map(key).includes(key(x.external_id)))}
   function children(p){let k=key(p.external_id);return people.filter(x=>parents(x).some(y=>key(y.external_id)===k))}
   function roots(){
-    let has=new Set();
-    people.forEach(p=>parents(p).forEach(()=>has.add(key(p.external_id))));
+    let hasParents=new Set();
+    people.forEach(p=>{if(parents(p).length)hasParents.add(key(p.external_id));});
     let out=[];
-    people.filter(p=>!has.has(key(p.external_id))).forEach(p=>{
-      let ids=[key(p.external_id),...spouses(p).map(x=>key(x.external_id))];
+    people.filter(p=>!hasParents.has(key(p.external_id))).forEach(p=>{
+      let ps=spouses(p);
+      // If this parentless person is partnered with someone who is already
+      // connected to parents, the partner's family is the canonical root.
+      // Do not render the same family component a second time.
+      if(ps.some(s=>hasParents.has(key(s.external_id))))return;
+      let ids=[key(p.external_id),...ps.map(x=>key(x.external_id))];
       if(!out.some(x=>ids.includes(key(x.external_id))))out.push(p);
     });
     return out;
