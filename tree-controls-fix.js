@@ -31,17 +31,13 @@
   function subtreeHas(p,q,seen=new Set()){
     let k=key(p.external_id);if(seen.has(k))return false;seen.add(k);
     if(matches(p,q))return true;
-    return children(p).some(x=>subtreeHas(x,q,new Set(seen)));
+    return [...spouses(p),...children(p)].some(x=>subtreeHas(x,q,new Set(seen)));
   }
   function card(raw){let p=person(raw);return '<div class="person" onclick="profile(\''+esc(p.external_id)+'\')"><div class="name">'+esc(p.full_name||'Unnamed')+'</div><div class="meta">'+esc(p.external_id)+(p.birth_date?' · 🎂 '+esc(p.birth_date):'')+'</div>'+(p.place?'<div class="meta">📍 '+esc(p.place)+'</div>':'')+(p.occupation?'<div class="meta">💼 '+esc(p.occupation)+'</div>':'')+'</div>'}
   function branch(p,seen=new Set(),rendered=new Set()){
     let k=key(p.external_id);if(seen.has(k)||rendered.has(k))return'';
     let n=new Set(seen);n.add(k);rendered.add(k);
-    let s=spouses(p);
-    // A spouse is rendered as part of this family unit, so reserve that ID globally too.
-    // This prevents the same person from appearing again when another ancestral route reaches them.
-    s.forEach(x=>rendered.add(key(x.external_id)));
-    let c=children(p);
+    let s=spouses(p),c=children(p);
     let h='<div class="family"><div class="couple">'+card(p)+(s[0]?'<span>💍</span>'+card(s[0]):'')+'</div>';
     if(open.has(k)&&c.length)h+='<div class="children">'+c.map(x=>'<div class="kid">'+branch(x,n,rendered)+'</div>').join('')+'</div>';
     return h+'</div>';
@@ -56,11 +52,7 @@
     let rendered=new Set();
     document.getElementById('content').innerHTML='<div class="tree"><div class="hint" style="text-align:center">'+note+'</div>'+rs.map(p=>branch(p,new Set(),rendered)).join('')+'</div>';
   }
-  function render(){
-    let q=(document.getElementById('search')?.value||'').trim().toLowerCase();
-    if(view==='list'){listRender(q);return}
-    treeRender(q);
-  }
+  function render(){let q=(document.getElementById('search')?.value||'').trim().toLowerCase();if(view==='list'){listRender(q);return}treeRender(q);}
   function setView(v){view=v;['t','t2'].forEach(id=>document.getElementById(id)?.classList.toggle('active',v==='tree'));['l','l2'].forEach(id=>document.getElementById(id)?.classList.toggle('active',v==='list'));render()}
   function expandAll(){people.forEach(p=>open.add(key(p.external_id)));render()}
   function collapseAll(){open.clear();render()}
