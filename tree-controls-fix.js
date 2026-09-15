@@ -37,7 +37,11 @@
   function branch(p,seen=new Set(),rendered=new Set()){
     let k=key(p.external_id);if(seen.has(k)||rendered.has(k))return'';
     let n=new Set(seen);n.add(k);rendered.add(k);
-    let s=spouses(p),c=children(p);
+    let s=spouses(p);
+    // A spouse is rendered as part of this family unit, so reserve that ID globally too.
+    // This prevents the same person from appearing again when another ancestral route reaches them.
+    s.forEach(x=>rendered.add(key(x.external_id)));
+    let c=children(p);
     let h='<div class="family"><div class="couple">'+card(p)+(s[0]?'<span>💍</span>'+card(s[0]):'')+'</div>';
     if(open.has(k)&&c.length)h+='<div class="children">'+c.map(x=>'<div class="kid">'+branch(x,n,rendered)+'</div>').join('')+'</div>';
     return h+'</div>';
