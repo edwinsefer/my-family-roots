@@ -9,7 +9,7 @@
       const b=document.createElement('button');
       b.type='button'; b.className='mfr-edit-btn'; b.textContent='✏️ Edit';
       b.style.cssText='margin-top:8px;padding:6px 9px;border:1px solid #dfd2bf;border-radius:8px;background:#6b4f2f;color:#fff;cursor:pointer';
-      b.onclick=e=>{e.stopPropagation();location.href='family-editor2.html?person='+encodeURIComponent(id)+'&v=20260916-edit'};
+      b.onclick=e=>{e.stopPropagation();const s=JSON.parse(localStorage.getItem('mfr_session_v1')||'null');const target='family-editor2.html?person='+encodeURIComponent(id)+'&v=20260916-edit';location.href=s?.access_token?target:'login.html?return='+encodeURIComponent(target)+'&v=20260916-edit-login'};
       card.appendChild(b);
     });
   }
