@@ -28,6 +28,6 @@
   function render(){load();let q=(document.getElementById('search')?.value||'').trim().toLowerCase();if(view==='list'){listRender(q);return}treeRender(q)}
   function setView(v){view=v;['t','t2'].forEach(id=>document.getElementById(id)?.classList.toggle('active',v==='tree'));['l','l2'].forEach(id=>document.getElementById(id)?.classList.toggle('active',v==='list'));render()}
   function expandAll(){load();people.forEach(p=>open.add(key(p.external_id)));render()}
-  function collapseAll(){open.clear();render()}
+  function collapseAll(){open.clear();treeRender((document.getElementById('search')?.value||'').trim().toLowerCase())}
   window.setView=setView;window.render=render;window.expandAll=expandAll;window.collapseAll=collapseAll;load();render();
 })();
