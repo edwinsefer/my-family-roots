@@ -30,6 +30,10 @@
   P['@I164@']=['@I29@','@I163@'];
   P['@I165@']=['@I29@','@I163@'];
 
+  // User-confirmed verification link: local test member @L1@ is spouse of Janoffia @I40@.
+  S['@L1@']=['@I40@'];
+  S['@I40@']=['@L1@'];
+
   window.GEDCOM_PARENTS=P;
   window.GEDCOM_SPOUSES=S;
   window.render?.();
