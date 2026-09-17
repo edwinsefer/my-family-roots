@@ -1,0 +1,8 @@
+{
+  "appId": "com.edwinsefer.myfamilyroots",
+  "appName": "My Family Roots",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
