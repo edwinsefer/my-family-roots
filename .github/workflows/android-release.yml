@@ -1,0 +1,120 @@
+name: Build My Family Roots Stable Android APK
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Install icon tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin imagemagick
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prepare web assets
+        run: npm run build:web
+
+      - name: Generate Android project
+        run: npx cap add android
+
+      - name: Sync Capacitor
+        run: npx cap sync android
+
+      - name: Apply My Family Roots launcher icon
+        run: |
+          rsvg-convert -w 512 -h 512 -o /tmp/my-family-roots-icon.png assets/my-family-roots-icon.svg
+          for spec in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
+            density="${spec%%:*}"
+            size="${spec##*:}"
+            dir="android/app/src/main/res/mipmap-${density}"
+            mkdir -p "$dir"
+            rm -f "$dir/ic_launcher.png" "$dir/ic_launcher_round.png" "$dir/ic_launcher.webp" "$dir/ic_launcher_round.webp"
+            convert /tmp/my-family-roots-icon.png -resize "${size}x${size}" "$dir/ic_launcher.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+          done
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+
+      - name: Decode stable signing keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_BASE64"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/my-family-roots-release.jks
+          test -s android/app/my-family-roots-release.jks
+
+      - name: Configure stable release signing
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path("app/build.gradle")
+          s = p.read_text()
+
+          signing = '''\n    signingConfigs {\n        release {\n            storeFile file("my-family-roots-release.jks")\n            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\n            keyAlias System.getenv("ANDROID_KEY_ALIAS")\n            keyPassword System.getenv("ANDROID_KEY_PASSWORD")\n        }\n    }\n'''
+
+          if "signingConfigs {" not in s:
+              s = s.replace("android {", "android {" + signing, 1)
+
+          if "signingConfig signingConfigs.release" not in s:
+              pattern = r'(buildTypes\s*\{\s*release\s*\{)'
+              s, n = re.subn(pattern, r'\1\n            signingConfig signingConfigs.release', s, count=1)
+              if n != 1:
+                  raise SystemExit("Could not locate release build type in generated Gradle file")
+
+          p.write_text(s)
+          PY
+
+      - name: Build stable signed release APK
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Verify release APK exists
+        run: test -s android/app/build/outputs/apk/release/app-release.apk
+
+      - name: Upload stable APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-family-roots-stable-release-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+
+      - name: Publish stable APK release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="android-stable-v${{ github.run_number }}"
+          gh release create "$TAG" android/app/build/outputs/apk/release/app-release.apk \
+            --title "My Family Roots Stable Android APK ${{ github.run_number }}" \
+            --notes "Stable-signed release APK built from commit ${{ github.sha }}. Includes V2.3 Family Data Backup & Restore and the current verified My Family Roots app."
