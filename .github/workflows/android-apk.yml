@@ -11,6 +11,7 @@ on:
       - 'photo-gallery-v3.js'
       - 'photo-gallery-fix.js'
       - 'photo-gallery-button-fix.js'
+      - 'ui-polish-v1.js'
       - 'family-members-static.js'
       - 'gedcom-relationships.js'
       - 'relationship-overrides.js'
@@ -70,4 +71,4 @@ jobs:
           TAG="android-v${{ github.run_number }}"
           gh release create "$TAG" android/app/build/outputs/apk/debug/app-debug.apk \
             --title "My Family Roots Android APK ${{ github.run_number }}" \
-            --notes "Debug APK built from commit ${{ github.sha }}. This release includes the latest verified tree photo preview fix."
+            --notes "Debug APK built from commit ${{ github.sha }}. Includes the latest verified tree photo preview fix and V2.2 mobile UI polish."
