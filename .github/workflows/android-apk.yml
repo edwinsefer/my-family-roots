@@ -12,6 +12,7 @@ on:
       - 'photo-gallery-fix.js'
       - 'photo-gallery-button-fix.js'
       - 'ui-polish-v1.js'
+      - 'assets/my-family-roots-icon.svg'
       - 'family-members-static.js'
       - 'gedcom-relationships.js'
       - 'relationship-overrides.js'
@@ -41,6 +42,11 @@ jobs:
           distribution: temurin
           java-version: '21'
 
+      - name: Install icon tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y librsvg2-bin imagemagick
+
       - name: Install dependencies
         run: npm install
 
@@ -52,6 +58,20 @@ jobs:
 
       - name: Sync Capacitor
         run: npx cap sync android
+
+      - name: Apply My Family Roots launcher icon
+        run: |
+          rsvg-convert -w 512 -h 512 -o /tmp/my-family-roots-icon.png assets/my-family-roots-icon.svg
+          for spec in "mdpi:48" "hdpi:72" "xhdpi:96" "xxhdpi:144" "xxxhdpi:192"; do
+            density="${spec%%:*}"
+            size="${spec##*:}"
+            dir="android/app/src/main/res/mipmap-${density}"
+            mkdir -p "$dir"
+            rm -f "$dir/ic_launcher.png" "$dir/ic_launcher_round.png" "$dir/ic_launcher.webp" "$dir/ic_launcher_round.webp"
+            convert /tmp/my-family-roots-icon.png -resize "${size}x${size}" "$dir/ic_launcher.png"
+            cp "$dir/ic_launcher.png" "$dir/ic_launcher_round.png"
+          done
+          rm -f android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
 
       - name: Build debug APK
         working-directory: android
@@ -71,4 +91,4 @@ jobs:
           TAG="android-v${{ github.run_number }}"
           gh release create "$TAG" android/app/build/outputs/apk/debug/app-debug.apk \
             --title "My Family Roots Android APK ${{ github.run_number }}" \
-            --notes "Debug APK built from commit ${{ github.sha }}. Includes the latest verified tree photo preview fix and V2.2 mobile UI polish."
+            --notes "Debug APK built from commit ${{ github.sha }}. Includes the verified tree photo preview, V2.2 mobile UI polish, and the Keelapavoor Family Heritage launcher icon."
