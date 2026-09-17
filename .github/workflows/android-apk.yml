@@ -2,6 +2,21 @@ name: Build My Family Roots Android APK
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'family-roots10.html'
+      - 'family-roots-gallery.html'
+      - 'tree-photo-preview.js'
+      - 'photo-gallery-v3.js'
+      - 'photo-gallery-fix.js'
+      - 'photo-gallery-button-fix.js'
+      - 'family-members-static.js'
+      - 'gedcom-relationships.js'
+      - 'relationship-overrides.js'
+      - 'package.json'
+      - 'scripts/**'
+      - '.github/workflows/android-apk.yml'
 
 jobs:
   build-android:
