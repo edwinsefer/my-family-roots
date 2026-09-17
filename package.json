@@ -1,0 +1,18 @@
+{
+  "name": "my-family-roots",
+  "version": "2.0.0",
+  "private": true,
+  "description": "My Family Roots — Android app wrapper for the verified V1 family tree.",
+  "scripts": {
+    "build:web": "node scripts/prepare-app.cjs",
+    "cap:sync": "npm run build:web && npx cap sync android",
+    "cap:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.4",
+    "@capacitor/android": "^7.4.4"
+  }
+}
