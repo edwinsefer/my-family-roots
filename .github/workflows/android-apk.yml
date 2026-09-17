@@ -11,6 +11,7 @@ on:
       - 'photo-gallery-v3.js'
       - 'photo-gallery-fix.js'
       - 'photo-gallery-button-fix.js'
+      - 'family-backup-v1.js'
       - 'ui-polish-v1.js'
       - 'assets/my-family-roots-icon.svg'
       - 'family-members-static.js'
@@ -91,4 +92,4 @@ jobs:
           TAG="android-v${{ github.run_number }}"
           gh release create "$TAG" android/app/build/outputs/apk/debug/app-debug.apk \
             --title "My Family Roots Android APK ${{ github.run_number }}" \
-            --notes "Debug APK built from commit ${{ github.sha }}. Includes the verified tree photo preview, V2.2 mobile UI polish, and the Keelapavoor Family Heritage launcher icon."
+            --notes "Debug APK built from commit ${{ github.sha }}. Includes V2.3 Family Data Backup & Restore, verified tree photo preview, V2.2 mobile UI polish, and the Keelapavoor Family Heritage launcher icon."
