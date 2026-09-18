@@ -64,6 +64,18 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/my-family-roots-release.jks
           test -s android/app/my-family-roots-release.jks
 
+      - name: Validate stable signing key
+        working-directory: android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          keytool -list -keystore app/my-family-roots-release.jks \
+            -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" >/dev/null
+
       - name: Configure stable release signing
         working-directory: android
         env:
@@ -77,21 +89,24 @@ jobs:
 
           p = Path("app/build.gradle")
           s = p.read_text()
-
-          signing = '''\n    signingConfigs {\n        release {\n            storeFile file("my-family-roots-release.jks")\n            storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")\n            keyAlias System.getenv("ANDROID_KEY_ALIAS")\n            keyPassword System.getenv("ANDROID_KEY_PASSWORD")\n        }\n    }\n'''
-
-          if "signingConfigs {" not in s:
+          signing = '''
+              signingConfigs {
+                  mfrRelease {
+                      storeFile file("my-family-roots-release.jks")
+                      storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
+                      keyAlias System.getenv("ANDROID_KEY_ALIAS")
+                      keyPassword System.getenv("ANDROID_KEY_PASSWORD")
+                  }
+              }
+          '''
+          if "mfrRelease {" not in s:
               s = s.replace("android {", "android {" + signing, 1)
-
-          if "signingConfig signingConfigs.release" not in s:
-              pattern = r'(buildTypes\s*\{\s*release\s*\{)'
-              s, n = re.subn(pattern, r'\1\n            signingConfig signingConfigs.release', s, count=1)
-              if n != 1:
-                  raise SystemExit("Could not locate release build type in generated Gradle file")
-
+          pattern = r'(buildTypes\s*\{\s*release\s*\{)'
+          s, n = re.subn(pattern, r'\1\n            signingConfig signingConfigs.mfrRelease', s, count=1)
+          if n != 1:
+              raise SystemExit("Could not locate release build type in generated Gradle file")
           p.write_text(s)
           PY
-
       - name: Build stable signed release APK
         working-directory: android
         env:
