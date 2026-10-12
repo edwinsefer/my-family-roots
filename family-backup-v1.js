@@ -18,14 +18,35 @@
   async function importBackup(file,status){
     const b=await readFile(file);if(!b||b.format!=='MFR-BACKUP'||b.version!==1)throw new Error('Invalid My Family Roots backup file.');
     if(!confirm('SAFE MERGE: existing app data and photos will be kept. Missing localStorage keys and backup photos will be added; conflicting existing keys will not be overwritten. Continue?'))return;
-    const ls=b.localStorage||{};let addedKeys=0,keptKeys=0;Object.entries(ls).forEach(([k,v])=>{if(localStorage.getItem(k)===null){if(v!=null){localStorage.setItem(k,v);addedKeys++}}else{keptKeys++}});
+    const ls=b.localStorage||{};let addedKeys=0,mergedArrays=0,keptKeys=0,addedArrayItems=0;
+    Object.entries(ls).forEach(([k,v])=>{
+      if(v==null)return;
+      const currentRaw=localStorage.getItem(k);
+      if(currentRaw===null){localStorage.setItem(k,v);addedKeys++;return}
+      // Only merge arrays of records with stable IDs; leave unknown formats untouched.
+      try{
+        const current=JSON.parse(currentRaw),incoming=JSON.parse(v);
+        if(Array.isArray(current)&&Array.isArray(incoming)&&current.every(x=>x&&typeof x==='object'&&!Array.isArray(x))&&incoming.every(x=>x&&typeof x==='object'&&!Array.isArray(x))){
+          const idOf=x=>x.id??x.memberId??x.personId??x.familyMemberId??null;
+          const currentIds=new Set(current.map(idOf).filter(x=>x!=null).map(String));
+          const hasStableIds=current.length===0||current.every(x=>idOf(x)!=null);
+          const incomingHasIds=incoming.length===0||incoming.every(x=>idOf(x)!=null);
+          if(hasStableIds&&incomingHasIds){
+            const merged=current.slice();
+            for(const item of incoming){const id=idOf(item);if(id!=null&&!currentIds.has(String(id))){merged.push(item);currentIds.add(String(id));addedArrayItems++}}
+            localStorage.setItem(k,JSON.stringify(merged));mergedArrays++;return;
+          }
+        }
+      }catch{}
+      keptKeys++;
+    });
     let restored=0,failed=0;for(const p of (b.photos||[])){if(!p.data)continue;try{const blob=await (await fetch(p.data)).blob();const item={...p,blob};delete item.data;delete item.id;await addPhoto(item);restored++}catch{failed++}}
     status.textContent=`✅ Safe merge complete. ${addedKeys} missing data keys added; ${keptKeys} existing keys kept; ${restored} photos added${failed?`; ${failed} photos could not be added`:''}. Reloading…`;setTimeout(()=>location.reload(),1200);
   }
   function open(){
     document.getElementById('mfrBackupOverlay')?.remove();
     const o=document.createElement('div');o.id='mfrBackupOverlay';o.style='position:fixed;inset:0;background:#24170bcc;z-index:200;overflow:auto;padding:12px';
-    o.innerHTML='<div style="max-width:650px;margin:50px auto;background:#fffdf9;border:1px solid #dfd2bf;border-radius:18px;padding:18px;box-shadow:0 12px 40px #0003"><div style="display:flex;align-items:center;gap:8px"><h2 style="margin:0">💾 Family Data Backup</h2><button id="mfrBclose" style="margin-left:auto;padding:9px 12px;border-radius:10px;border:1px solid #dfd2bf;background:#fff">✕ Close</button></div><p style="color:#756a5e;line-height:1.5">Create a backup before updates or device changes. Includes local app data and family gallery photos stored on this device.</p><button id="mfrBexport" style="width:100%;padding:13px;border-radius:10px;border:1px solid #7b6a55;background:#f4eadc;font-weight:700">⬇️ Create Backup</button><hr style="border:0;border-top:1px solid #eadfce;margin:18px 0"><label style="font-weight:700">Restore from backup</label><input id="mfrBfile" type="file" accept="application/json,.json" style="width:100%;margin-top:8px"><p id="mfrBstatus" style="color:#756a5e;font-size:13px">Keep the backup file somewhere safe (Google Drive, PC, etc.).</p><button id="mfrBrestore" disabled style="width:100%;padding:13px;border-radius:10px;border:1px solid #dfd2bf;background:#fff;font-weight:700">♻️ Restore Backup</button><p style="font-size:12px;color:#8a7d6d;margin-bottom:0">Safe Merge: existing data is never cleared. Existing keys are kept; missing keys and backup photos are added. Keep the backup file until you verify the restored tree and photos.</p></div>';
+    o.innerHTML='<div style="max-width:650px;margin:50px auto;background:#fffdf9;border:1px solid #dfd2bf;border-radius:18px;padding:18px;box-shadow:0 12px 40px #0003"><div style="display:flex;align-items:center;gap:8px"><h2 style="margin:0">💾 Family Data Backup</h2><button id="mfrBclose" style="margin-left:auto;padding:9px 12px;border-radius:10px;border:1px solid #dfd2bf;background:#fff">✕ Close</button></div><p style="color:#756a5e;line-height:1.5">Create a backup before updates or device changes. Includes local app data and family gallery photos stored on this device.</p><button id="mfrBexport" style="width:100%;padding:13px;border-radius:10px;border:1px solid #7b6a55;background:#f4eadc;font-weight:700">⬇️ Create Backup</button><hr style="border:0;border-top:1px solid #eadfce;margin:18px 0"><label style="font-weight:700">Restore from backup</label><input id="mfrBfile" type="file" accept="application/json,.json" style="width:100%;margin-top:8px"><p id="mfrBstatus" style="color:#756a5e;font-size:13px">Keep the backup file somewhere safe (Google Drive, PC, etc.).</p><button id="mfrBrestore" disabled style="width:100%;padding:13px;border-radius:10px;border:1px solid #dfd2bf;background:#fff;font-weight:700">♻️ Restore Backup</button><p style="font-size:12px;color:#8a7d6d;margin-bottom:0">Safe Merge: existing data is never cleared. Missing keys are added; arrays of records with stable IDs are merged without duplicate IDs. Other conflicting keys are kept. Backup photos are added. Keep the backup file until you verify the restored tree and photos.</p></div>';
     document.body.appendChild(o);const file=o.querySelector('#mfrBfile'),restore=o.querySelector('#mfrBrestore'),status=o.querySelector('#mfrBstatus');let selected=null;
     o.querySelector('#mfrBclose').onclick=()=>o.remove();o.querySelector('#mfrBexport').onclick=async()=>{try{status.textContent='⏳ Creating backup…';status.textContent='✅ '+await exportBackup()}catch(e){status.textContent='⚠️ Backup failed: '+e.message}};
     file.onchange=()=>{selected=file.files?.[0]||null;restore.disabled=!selected;status.textContent=selected?'📄 '+selected.name+' selected.':'Keep the backup file somewhere safe.'};
