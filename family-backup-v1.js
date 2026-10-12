@@ -41,7 +41,7 @@
       keptKeys++;
     });
     let restored=0,failed=0;for(const p of (b.photos||[])){if(!p.data)continue;try{const blob=await (await fetch(p.data)).blob();const item={...p,blob};delete item.data;delete item.id;await addPhoto(item);restored++}catch{failed++}}
-    status.textContent=`✅ Safe merge complete. ${addedKeys} missing data keys added; ${keptKeys} existing keys kept; ${restored} photos added${failed?`; ${failed} photos could not be added`:''}. Reloading…`;setTimeout(()=>location.reload(),1200);
+    status.textContent=`✅ Safe merge complete. ${addedKeys} missing keys added; ${mergedArrays} record arrays checked; ${addedArrayItems} missing record(s) added; ${keptKeys} other keys kept; ${restored} photos added${failed?`; ${failed} photos could not be added`:''}. Reloading…`;setTimeout(()=>location.reload(),1200);
   }
   function open(){
     document.getElementById('mfrBackupOverlay')?.remove();
